@@ -25,12 +25,18 @@ public class TaskService {
 	@Autowired
 	private ProjectRepo projectRepo;
 	
+	@Transactional
 	public ModificationResult<Integer> create(TaskForm form){
-		return null;
+		var project = projectRepo.findById(form.projectId()).orElseThrow();
+		var entity = taskRepo.save(form.entity(project));
+		return ModificationResult.success(entity.getId());
 	}
 	
+	@Transactional
 	public ModificationResult<Integer> update(int id, TaskForm form){
-		return null;
+		var entity = taskRepo.findById(id).orElseThrow();
+		form.update(entity);
+		return ModificationResult.success(id);
 	}
 	
 	public List<TaskListItem> search(TaskSearch search){

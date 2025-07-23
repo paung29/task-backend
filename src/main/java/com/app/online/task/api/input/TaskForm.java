@@ -1,6 +1,10 @@
 package com.app.online.task.api.input;
 
 import java.time.LocalDate;
+import java.util.Optional;
+
+import com.app.online.task.model.entity.Project;
+import com.app.online.task.model.entity.Tasks;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -18,5 +22,23 @@ public record TaskForm(
 		LocalDate endDate,
 		String description
 		) {
+
+	public Tasks entity(Project project) {
+		var entity = new Tasks();
+		entity.setProject(project);
+		update(entity);
+		
+		return entity;
+	}
+
+	public void update(Tasks entity) {
+		entity.setName(name);
+		entity.setAssignee(assignee);
+		entity.setDueDate(dueDate);
+		entity.setStartDate(startDate);
+		entity.setEndDate(endDate);
+		entity.setDescription(description);
+		
+	}
 
 }
