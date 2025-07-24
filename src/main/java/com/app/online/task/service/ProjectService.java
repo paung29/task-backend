@@ -11,8 +11,12 @@ import com.app.online.task.api.input.ProjectForm;
 import com.app.online.task.api.input.ProjectSearch;
 import com.app.online.task.api.output.ProjectDetails;
 import com.app.online.task.api.output.ProjectListItem;
+import com.app.online.task.model.entity.Project;
+import com.app.online.task.model.entity.Project_;
 import com.app.online.task.model.repo.ProjectRepo;
 import com.app.online.task.utils.ApiBusinessException;
+
+import jakarta.persistence.criteria.JoinType;
 
 @Service
 @Transactional(readOnly = true)
@@ -33,19 +37,48 @@ public class ProjectService {
 
 	@Transactional
 	public ModificationResult<Integer> update(int id, ProjectForm form) {
-		var entity = repo.findById(id).orElseThrow();
+		
+		checkBusinessRule(form);
+		
+		var entity = repo.findById(id)
+				.orElseThrow(() -> new ApiBusinessException("There is no project with id %d".formatted(id)));
+		
 		form.update(entity);
+		
 		return ModificationResult.success(entity.getId());
 	}
 
 	public List<ProjectListItem> search(ProjectSearch search) {
 		
-		return null;
+		return repo.search(cb -> {
+			var cq = cb.createQuery(ProjectListItem.class);
+			
+			var root = cq.from(Project.class);
+			
+			var tasks = root.join(Project_.tasks, JoinType.LEFT);
+			
+			ProjectListItem.select(cb, cq, root, tasks);
+			
+			cq.where(search.where(cb, root));
+			
+			var having = search.having(cb, root, tasks);
+			
+			if(having.length > 0) {
+				cq.having(having);
+			}
+			
+			cq.orderBy(cb.desc(root.get(Project_.id)));
+			
+			return cq;
+		});
 	}
 
 	public ProjectDetails findById(int id) {
 		
-		return null;
+		var entity = repo.findById(id)
+				.orElseThrow(() -> new ApiBusinessException("There is no project id with id %d".formatted(id)));
+		
+		return ProjectDetails.from(entity);
 	}
 	
 	private void checkBusinessRule(ProjectForm form) {
